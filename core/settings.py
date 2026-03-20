@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     "django_rq",
     # ------- apps -------
     "auth_app",
-    "video_app",
+    "video_app.apps.VideoAppConfig",
 ]
 
 MIDDLEWARE = [

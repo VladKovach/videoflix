@@ -6,10 +6,21 @@ from django.db import models
 class Video(models.Model):
     """Model definition for Video."""
 
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        DONE = "done", "Done"
+        FAILED = "failed", "Failed"
+
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
     thumbnail_url = models.URLField()
     category = models.CharField(max_length=50)
+    video_file = models.FileField(upload_to="videos")
+    hls_path = models.CharField(max_length=500, blank=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

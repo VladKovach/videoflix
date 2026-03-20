@@ -1,7 +1,83 @@
+import os
+import subprocess
+
 import django_rq
+from django.conf import settings
+
+QUALITY_PROFILES = [
+    {"name": "360p", "scale": "640:360", "bitrate": "800k", "audio": "96k"},
+    {"name": "480p", "scale": "854:480", "bitrate": "1400k", "audio": "128k"},
+    {"name": "720p", "scale": "1280:720", "bitrate": "2800k", "audio": "128k"},
+    {
+        "name": "1080p",
+        "scale": "1920:1080",
+        "bitrate": "5000k",
+        "audio": "192k",
+    },
+]
 
 
 @django_rq.job("default")
 def transcode_video(video_id):
-    print(f"Transcoding video {video_id}...")
-    # FFmpeg will go here later
+    from video_app.models import Video
+
+    video = Video.objects.get(id=video_id)
+    video.status = "processing"
+    video.save(update_fields=["status"])
+
+    base_dir = os.path.join(settings.MEDIA_ROOT, "video", str(video_id))
+    os.makedirs(base_dir, exist_ok=True)
+
+    try:
+        variant_playlists = []
+
+        for profile in QUALITY_PROFILES:
+            quality_dir = os.path.join(base_dir, profile["name"])
+            os.makedirs(quality_dir, exist_ok=True)
+
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-i",
+                    video.video_file.path,
+                    "-vf",
+                    f"scale={profile['scale']}",
+                    "-vcodec",
+                    "libx264",
+                    "-crf",
+                    "23",
+                    "-b:v",
+                    profile["bitrate"],
+                    "-acodec",
+                    "aac",
+                    "-b:a",
+                    profile["audio"],
+                    "-hls_time",
+                    "5",
+                    "-hls_playlist_type",
+                    "vod",
+                    "-hls_segment_filename",
+                    f"{quality_dir}/segment_%03d.ts",
+                    f"{quality_dir}/index.m3u8",
+                ],
+                check=True,
+            )
+
+            variant_playlists.append(profile)
+
+        master_path = os.path.join(base_dir, "master.m3u8")
+        with open(master_path, "w", encoding="utf-8") as f:
+            f.write("#EXTM3U\n")
+            for profile in variant_playlists:
+                f.write(
+                    f'#EXT-X-STREAM-INF:BANDWIDTH={profile["bitrate"].replace("k", "000")},RESOLUTION={profile["scale"].replace(":", "x")}\n'
+                )
+                f.write(f'{profile["name"]}/index.m3u8\n')
+
+        video.hls_path = f"video/{video_id}/master.m3u8"
+        video.status = "done"
+        video.save(update_fields=["hls_path", "status"])
+
+    except subprocess.CalledProcessError:
+        video.status = "failed"
+        video.save(update_fields=["status"])

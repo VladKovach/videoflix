@@ -218,3 +218,23 @@ __marimo__/
 
 
 migrations/__pycache__
+
+# Gunicorn
+gunicorn.ctl
+*.ctl
+*.pid
+*.sock
+
+
+# Django
+*.log
+/media/
+/static/
+
+
+# Docker
+postgres_data/
+
+# OS
+.DS_Store
+Thumbs.db
