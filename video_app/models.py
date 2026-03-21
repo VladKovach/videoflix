@@ -14,7 +14,7 @@ class Video(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
-    thumbnail_url = models.URLField()
+    thumbnail = models.FileField(upload_to="thumbnails/", blank=True)
     category = models.CharField(max_length=50)
     video_file = models.FileField(upload_to="videos")
     hls_path = models.CharField(max_length=500, blank=True)

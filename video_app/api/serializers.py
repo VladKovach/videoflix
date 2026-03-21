@@ -8,6 +8,8 @@ class VideoSerializer(serializers.ModelSerializer):
     VideoSerializer description
     """
 
+    thumbnail_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Video
         fields = [
@@ -15,6 +17,13 @@ class VideoSerializer(serializers.ModelSerializer):
             "created_at",
             "title",
             "description",
+            "thumbnail",
             "thumbnail_url",
             "category",
         ]
+
+    def get_thumbnail_url(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail and request:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
