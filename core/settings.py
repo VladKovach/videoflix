@@ -205,9 +205,28 @@ REST_FRAMEWORK = {
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL", "noreply.vladkovach@gmail.com"
+)
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),

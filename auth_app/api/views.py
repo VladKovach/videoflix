@@ -44,7 +44,7 @@ class RegistrationView(APIView):
         send_mail(
             subject="Activate your Videoflix account",
             message=f"Click the link to activate your account:\n\n{activation_link}",
-            from_email="noreply@videoflix.com",
+            from_email="noreply.vladkovach@gmail.com",
             recipient_list=[user.email],  # ← send to the actual user
             fail_silently=False,
         )
