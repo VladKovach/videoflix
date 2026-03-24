@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -40,12 +41,27 @@ class RegistrationView(APIView):
         activation_link = (
             f"http://localhost:8000/api/activate/{uidb64}/{token}/"
         )
+        html_content = render_to_string(
+            "emails/activation.html",
+            {
+                "activation_link": activation_link,
+            },
+        )
+        plain_text = f"""
+        Hi!,
 
+        Click here to activate your Videoflix account:
+        {activation_link}
+
+        Thanks,
+        Videoflix Team
+        """
         send_mail(
             subject="Activate your Videoflix account",
-            message=f"Click the link to activate your account:\n\n{activation_link}",
+            html_message=html_content,
+            message=plain_text,
             from_email="noreply.vladkovach@gmail.com",
-            recipient_list=[user.email],  # ← send to the actual user
+            recipient_list=[user.email],
             fail_silently=False,
         )
         return Response(
