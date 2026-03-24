@@ -17,7 +17,6 @@ class Video(models.Model):
     thumbnail = models.FileField(upload_to="thumbnails/", blank=True)
     category = models.CharField(max_length=50)
     video_file = models.FileField(upload_to="videos")
-    hls_path = models.CharField(max_length=500, blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
     )

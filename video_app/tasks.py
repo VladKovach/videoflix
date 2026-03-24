@@ -5,11 +5,26 @@ import django_rq
 from django.conf import settings
 
 QUALITY_PROFILES = [
-    {"name": "360p", "scale": "640:360", "bitrate": "800k", "audio": "96k"},
-    {"name": "480p", "scale": "854:480", "bitrate": "1400k", "audio": "128k"},
-    {"name": "720p", "scale": "1280:720", "bitrate": "2800k", "audio": "128k"},
     {
-        "name": "1080p",
+        "resolution": "360p",
+        "scale": "640:360",
+        "bitrate": "800k",
+        "audio": "96k",
+    },
+    {
+        "resolution": "480p",
+        "scale": "854:480",
+        "bitrate": "1400k",
+        "audio": "128k",
+    },
+    {
+        "resolution": "720p",
+        "scale": "1280:720",
+        "bitrate": "2800k",
+        "audio": "128k",
+    },
+    {
+        "resolution": "1080p",
         "scale": "1920:1080",
         "bitrate": "5000k",
         "audio": "192k",
@@ -32,7 +47,7 @@ def transcode_video(video_id):
         variant_playlists = []
 
         for profile in QUALITY_PROFILES:
-            quality_dir = os.path.join(base_dir, profile["name"])
+            quality_dir = os.path.join(base_dir, profile["resolution"])
             os.makedirs(quality_dir, exist_ok=True)
 
             subprocess.run(
@@ -67,16 +82,22 @@ def transcode_video(video_id):
 
         master_path = os.path.join(base_dir, "master.m3u8")
         with open(master_path, "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
-            for profile in variant_playlists:
-                f.write(
-                    f'#EXT-X-STREAM-INF:BANDWIDTH={profile["bitrate"].replace("k", "000")},RESOLUTION={profile["scale"].replace(":", "x")}\n'
-                )
-                f.write(f'{profile["name"]}/index.m3u8\n')
+            f.write(
+                "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-INDEPENDENT-SEGMENTS\n\n"
+            )  # Added \n
 
-        video.hls_path = f"video/{video_id}/master.m3u8"
-        video.status = "done"
-        video.save(update_fields=["hls_path", "status"])
+            for profile in QUALITY_PROFILES:
+                bandwidth = int(profile["bitrate"].replace("k", "")) * 1000
+                resolution = profile["scale"].replace(
+                    ":", "x"
+                )  # ✅ Use "scale" not "resolution"
+                f.write(
+                    f"#EXT-X-STREAM-INF:BANDWIDTH={bandwidth},RESOLUTION={resolution}\n"
+                )  # ✅ Fixed quotes & ;
+                f.write(f'{profile["resolution"]}/index.m3u8\n')
+
+        video.status = "done"  # ✅ Move OUTSIDE loop
+        video.save(update_fields=["status"])
 
     except subprocess.CalledProcessError:
         video.status = "failed"
