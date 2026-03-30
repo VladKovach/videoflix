@@ -12,13 +12,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from auth_app.api.serializers import RegistrationSerializer
+from auth_app.api.serializers import (
+    PasswordResetConfirmSerializer,
+    RegistrationSerializer,
+    ResetPasswordSerializer,
+)
 
 User = get_user_model()
 
 
 from django.contrib.auth.tokens import default_token_generator
-from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
@@ -176,7 +179,7 @@ class LogoutView(APIView):
 
         response = Response(
             {
-                "detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
+                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
             }
         )
         response.delete_cookie("access_token")
@@ -211,7 +214,7 @@ class ActivateTokenView(APIView):
 
         response = Response(
             {
-                "message": "Account activated",
+                "message": "Account successfully activated.",
                 "user": {"id": user.id, "email": user.email},
             },
             status=status.HTTP_200_OK,
@@ -236,3 +239,67 @@ class ActivateTokenView(APIView):
         )
 
         return response
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+
+        user = User.objects.filter(email=email).first()
+
+        if user:
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            reset_password_link = (
+                f"http://localhost:8000/api/password_confirm/{uidb64}/{token}/"
+            )
+            html_content = render_to_string(
+                "emails/reset_password.html",
+                {
+                    "reset_password_link": reset_password_link,
+                },
+            )
+            plain_text = f"""
+                Hi!,
+
+                Click below to reset your password::
+                {reset_password_link}
+
+                Videoflix Team
+                """
+            send_mail(
+                subject="Reset password for your Videoflix account",
+                html_message=html_content,
+                message=plain_text,
+                from_email="noreply.vladkovach@gmail.com",
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            return Response(
+                {
+                    "message": "Check your email to reset your account's password"
+                },
+                status=201,
+            )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        serializer = PasswordResetConfirmSerializer(
+            data=request.data, context={"uidb64": uidb64, "token": token}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"message": "Password has been reset successfully."},
+            status=status.HTTP_200_OK,
+        )
