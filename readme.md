@@ -69,7 +69,7 @@ docker compose up --build -d
 docker compose exec web python manage.py migrate
 ```
 
-⚠️ Tip: If you see the error `service "web" is not running`, make sure your line endings are set to LF instead of CRLF (bottom right in your editor). Save the file and try again.
+⚠️ Tip: If you see the error `service "web" is not running`, open `backend.entrypoint.sh` and make sure your line endings are set to LF instead of CRLF (bottom right in your editor). Save the file and try again.
 
 ### Step 6: Access the application
 
