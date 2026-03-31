@@ -27,9 +27,12 @@ from django.utils.http import urlsafe_base64_encode
 
 
 class RegistrationView(APIView):
+    """User registration endpoint, sends activation email on success"""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Handle user registration, send activation email."""
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -74,12 +77,12 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
-    """User login endpoint, set JWT tokens in cookies on success"""
+    """User login endpoint that sets JWT tokens in cookies on success."""
 
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """Handle user login"""
+        """Handle user login, set JWT tokens in cookies if credentials are valid."""
         email = request.data.get("email")
         password = request.data.get("password")
 
@@ -130,9 +133,12 @@ class LoginView(APIView):
 
 
 class RefreshTokenView(APIView):
+    """Endpoint to refresh JWT access token using the refresh token in cookies."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Handle token refresh, issue new access token if refresh token is valid."""
         refresh_token = request.COOKIES.get("refresh_token")
 
         if not refresh_token:
@@ -165,17 +171,18 @@ class RefreshTokenView(APIView):
 
 
 class LogoutView(APIView):
-    """"""
+    """User logout endpoint that blacklists the refresh token and clears cookies."""
 
     def post(self, request):
+        """Handle user logout, blacklist refresh token and clear cookies."""
         refresh_token = request.COOKIES.get("refresh_token")
 
         if refresh_token:
             try:
                 token = RefreshToken(refresh_token)
-                token.blacklist()  # Adds to blacklist DB table
+                token.blacklist()
             except TokenError:
-                pass  # Already invalid, no problem
+                pass
 
         response = Response(
             {
@@ -187,13 +194,13 @@ class LogoutView(APIView):
         return response
 
 
-# token activation
-
-
 class ActivateTokenView(APIView):
+    """Endpoint to activate user account using the token from the activation email."""
+
     permission_classes = [AllowAny]
 
     def get(self, request, uidb64, token):
+        """Handle account activation, activate user if link, token are valid and user is not active - activate user and set JWT tokens in cookies."""
         try:
             uid_bytes = urlsafe_base64_decode(uidb64)
             uid = int(uid_bytes.decode())
@@ -242,51 +249,54 @@ class ActivateTokenView(APIView):
 
 
 class ResetPasswordView(APIView):
+    """Endpoint to initiate password reset process"""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Handle password reset request, send reset email if user with provided email exists."""
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-
         user = User.objects.filter(email=email).first()
 
-        if user:
-            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-
-            reset_password_link = (
-                f"http://localhost:8000/api/password_confirm/{uidb64}/{token}/"
-            )
-            html_content = render_to_string(
-                "emails/reset_password.html",
-                {
-                    "reset_password_link": reset_password_link,
-                },
-            )
-            plain_text = f"""
-                Hi!,
-
-                Click below to reset your password::
-                {reset_password_link}
-
-                Videoflix Team
-                """
-            send_mail(
-                subject="Reset password for your Videoflix account",
-                html_message=html_content,
-                message=plain_text,
-                from_email="noreply.vladkovach@gmail.com",
-                recipient_list=[email],
-                fail_silently=False,
-            )
+        if not user:
             return Response(
-                {
-                    "message": "Check your email to reset your account's password"
-                },
-                status=201,
+                {"detail": "An email has been sent to reset your password."},
+                status=200,
             )
+
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+
+        reset_password_link = f"http://localhost:5500/pages/auth/confirm_password.html?uid={uidb64}&token={token}"
+        html_content = render_to_string(
+            "emails/reset_password.html",
+            {
+                "reset_password_link": reset_password_link,
+            },
+        )
+        plain_text = f"""
+            Hi!,
+
+            Click below to reset your password::
+            {reset_password_link}
+
+            Videoflix Team
+            """
+        send_mail(
+            subject="Reset password for your Videoflix account",
+            html_message=html_content,
+            message=plain_text,
+            from_email="noreply.vladkovach@gmail.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return Response(
+            {"detail": "An email has been sent to reset your password."},
+            status=200,
+        )
 
 
 class PasswordResetConfirmView(APIView):
@@ -300,6 +310,6 @@ class PasswordResetConfirmView(APIView):
         serializer.save()
 
         return Response(
-            {"message": "Password has been reset successfully."},
+            {"detail": "Your Password has been successfully reset."},
             status=status.HTTP_200_OK,
         )

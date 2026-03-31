@@ -1,16 +1,18 @@
+from dataclasses import field
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
-from rest_framework.decorators import permission_classes
-from rest_framework.permissions import AllowAny
 
 User = get_user_model()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for user registration."""
+
     confirmed_password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -19,36 +21,31 @@ class RegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True}}
 
     def validate(self, data):
+        """Validate that the password and confirmed password match."""
         if data["password"] != data["confirmed_password"]:
             raise serializers.ValidationError("Passwords do not match")
         return data
 
     def create(self, validated_data):
+        """Create a new user with the provided data."""
         validated_data.pop("confirmed_password")
         return User.objects.create_user(**validated_data)
 
 
-class ResetPasswordSerializer(serializers.ModelSerializer):
+class ResetPasswordSerializer(serializers.Serializer):
+    """Serializer for requesting a password reset."""
+
     email = serializers.EmailField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ["email"]
-
-    def validate_email(self, value):
-
-        if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                "User with such email not exist!"
-            )
-        return value
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming a password reset."""
+
     new_password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
+        """Validate the new password and confirm password."""
         new_password = attrs.get("new_password")
         confirm_password = attrs.get("confirm_password")
 
@@ -79,6 +76,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
     def save(self):
+        """Set the new password for the user."""
         user = self.validated_data["user"]
         password = self.validated_data["new_password"]
         user.set_password(password)
