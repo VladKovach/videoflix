@@ -300,9 +300,12 @@ class ResetPasswordView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
+    """Endpoint to confirm password reset and set new password"""
+
     permission_classes = [AllowAny]
 
     def post(self, request, uidb64, token):
+        """Handle password reset confirmation, set new password if token is valid."""
         serializer = PasswordResetConfirmSerializer(
             data=request.data, context={"uidb64": uidb64, "token": token}
         )

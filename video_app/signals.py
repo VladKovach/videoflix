@@ -8,6 +8,7 @@ from video_app.models import Video
 
 @receiver(post_delete, sender=Video)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """Deletes file from filesystem when corresponding `Video` object is deleted."""
 
     if instance.video_file:
         if os.path.isfile(instance.video_file.path):

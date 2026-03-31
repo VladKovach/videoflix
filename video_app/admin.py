@@ -13,6 +13,4 @@ class VideoAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         if not change:
-            print("save_model")
             transcode_video.delay(obj.id)
-            print("model_saved and transcoded")

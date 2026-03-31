@@ -34,6 +34,7 @@ QUALITY_PROFILES = [
 
 @django_rq.job("default")
 def transcode_video(video_id):
+    """Background task to transcode uploaded videos into HLS format using FFmpeg."""
     from video_app.models import Video
 
     video = Video.objects.get(id=video_id)
@@ -84,19 +85,17 @@ def transcode_video(video_id):
         with open(master_path, "w", encoding="utf-8") as f:
             f.write(
                 "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-INDEPENDENT-SEGMENTS\n\n"
-            )  # Added \n
+            )
 
             for profile in QUALITY_PROFILES:
                 bandwidth = int(profile["bitrate"].replace("k", "")) * 1000
-                resolution = profile["scale"].replace(
-                    ":", "x"
-                )  # ✅ Use "scale" not "resolution"
+                resolution = profile["scale"].replace(":", "x")
                 f.write(
                     f"#EXT-X-STREAM-INF:BANDWIDTH={bandwidth},RESOLUTION={resolution}\n"
-                )  # ✅ Fixed quotes & ;
+                )
                 f.write(f'{profile["resolution"]}/index.m3u8\n')
 
-        video.status = "done"  # ✅ Move OUTSIDE loop
+        video.status = "done"
         video.save(update_fields=["status"])
 
     except subprocess.CalledProcessError:
