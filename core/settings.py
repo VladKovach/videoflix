@@ -48,12 +48,8 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 ).split(",")
 
 
-# For development only - REMOVE in production!
-# CORS_ALLOW_ALL_ORIGINS = True
-
 CORS_ALLOW_CREDENTIALS = True
 
-# Put BEFORE CommonMiddleware, but AFTER SecurityMiddleware
 
 # Application definition
 
