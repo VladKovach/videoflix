@@ -23,73 +23,59 @@ A Django REST Framework backend for Video-on-Demand streaming with email-based a
 - Docker / Docker Compose
 - FFmpeg (installed inside the Docker image for video transcoding)
 
-## 🔧 Docker setup
+## 🚀 Installation & Setup
 
-This project is designed to run with Docker and Docker Compose. A local Python virtual environment is not required.
+### Step 1: Clone the Repository
 
-### Prerequisites
-
-- Docker Engine / Docker Desktop installed
-- Docker Compose available as `docker compose`
-
-### Setup
-
-1. Copy the environment template:
-
-```powershell
-copy .env.template .env
+```bash
+git clone https://github.com/VladKovach/videoflix.git
+cd videoflix
 ```
 
-2. Edit `.env` with your configuration.
-   - `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-   - `DB_HOST=db`
-   - `DB_PORT=5432`
-   - `REDIS_HOST=redis`
-   - `REDIS_LOCATION=redis://redis:6379/1`
-   - Email settings for account activation and password reset delivery
+### Step 2: Copy the environment template
 
-3. Build and start all services:
+```bash
+cp .env.template .env
+```
 
-```powershell
+### Step 3: Update `.env`
+
+Open `.env` and change these fields:
+
+- `DB_NAME` (your preferred name for DB),
+- `DB_USER` (your preferred DB user name),
+- `DB_PASSWORD` (your preferred password for DB)
+
+Generate a 16-character app password from your Google account security settings:
+
+1. Go to `https://myaccount.google.com/security`
+2. Enable 2-Step Verification if it is not already enabled
+3. In "Search" tab, type "app passwords" and pick the first result
+4. Create a new app password named as you want
+5. In `.env` change these fields:
+
+- `EMAIL_HOST_USER` (your email address)
+- `EMAIL_HOST_PASSWORD` (your new app password)
+
+### Step 4: Build and start with Docker Compose
+
+```bash
 docker compose up --build -d
 ```
 
-4. Apply database migrations inside the backend container:
+### Step 5: Apply database migrations
 
-```powershell
+```bash
 docker compose exec web python manage.py migrate
 ```
 
-5. Create a superuser inside the backend container:
+Tip: If you see the error service "web" is not running, make sure your line endings are set to LF instead of CRLF (bottom right in your editor). Save the file and try again.
 
-```powershell
-docker compose exec web python manage.py createsuperuser
-```
+### Step 6: Access the application
 
-6. Visit the app at `http://127.0.0.1:8000/`.
-
-### Notes
-
-- The Docker image installs `ffmpeg` and can run the transcode worker.
-- The backend container is named `videoflix_backend` in `docker-compose.yml`.
-- If you need to run commands manually in the web container, use:
-
-```powershell
-docker compose exec web sh
-```
+Open `http://127.0.0.1:8000/` in your browser.
 
 ## 🧩 Environment variables
-
-The project reads variables from `.env`. Important settings include:
-
-- `SECRET_KEY`
-- `DEBUG`
-- `ALLOWED_HOSTS`
-- `CSRF_TRUSTED_ORIGINS`
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
-- `REDIS_HOST`, `REDIS_LOCATION`, `REDIS_PORT`, `REDIS_DB`
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
-- `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `DEFAULT_FROM_EMAIL`
 
 ## 🌐 API Endpoints
 
@@ -116,7 +102,7 @@ The project reads variables from `.env`. Important settings include:
   - sends password reset email
 
 - `POST /api/password_confirm/<uidb64>/<token>/`
-  - confirm and set the new password
+  - confirms and sets a new password
 
 ### Video
 
@@ -129,35 +115,14 @@ The project reads variables from `.env`. Important settings include:
 - `GET /api/video/<movie_id>/<resolution>/<segment>/`
   - returns HLS segment file
 
-## 🗃️ Models and features
-
-- `auth_app.User`
-  - custom user model using email as login field
-
-- `video_app.Video`
-  - stores title, description, thumbnail, category, uploaded video file, status
-  - `status` values: `pending`, `processing`, `done`, `failed`
-
-- Background video transcoding
-  - `video_app.tasks.transcode_video` uses `ffmpeg` to build HLS segments and playlists
-  - `django-rq` is configured in `core.settings`
-
 ## 🧪 Admin
 
 - Visit `http://127.0.0.1:8000/admin/`
-- Login with the superuser created via `createsuperuser`
+- Login with the DJANGO_SUPERUSER_EMAIL and DJANGO_SUPERUSER_PASSWORD from .env
 
-## 🚀 Notes
+## 🗃️ Background video transcoding
 
-- In development, email is sent via console backend by default.
-- `access_token` / `refresh_token` cookies are configured for JWT authentication.
-- `STATIC_ROOT` is `static/` and `MEDIA_ROOT` is `media/`.
-- If you run with Docker Compose, the backend is exposed on port `8000`.
-
-## 📌 Helpful commands
-
-```powershell
-docker compose up --build -d
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
-```
+- Background video transcoding
+  - Add a new video in the admin panel
+  - A worker will transcode it in the background
+  - Once the video status is set to "done", it will be available in 360p, 480p, 720p, and 1080p
