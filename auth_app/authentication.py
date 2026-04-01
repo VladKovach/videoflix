@@ -6,6 +6,7 @@ class CookieJWTAuthentication(JWTAuthentication):
     """Custom authentication class to read JWT from cookies."""
 
     def authenticate(self, request):
+        """Read JWT from cookies and return the user if token is valid."""
         raw_token = request.COOKIES.get("access_token")
         if not raw_token:
             return None

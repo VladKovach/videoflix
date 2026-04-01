@@ -65,12 +65,6 @@ Generate a 16-character app password from your Google account security settings:
 docker compose up --build -d
 ```
 
-### Step 5: Apply database migrations
-
-```bash
-docker compose exec web python manage.py migrate
-```
-
 ⚠️ Tip: If you see the error `service "web" is not running`, open `backend.entrypoint.sh` and make sure your line endings are set to LF instead of CRLF (bottom right in your editor). Save the file and try again.
 
 ### Step 6: Access the application

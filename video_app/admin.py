@@ -9,6 +9,7 @@ from video_app.tasks import transcode_video
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
     list_display = ["title", "category", "status", "created_at"]
+    readonly_fields = ["status", "created_at", "updated_at"]
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

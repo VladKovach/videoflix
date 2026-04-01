@@ -44,7 +44,7 @@ class RegistrationView(APIView):
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        activation_link = f"http://localhost:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
+        activation_link = f"http://127.0.0.1:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
         html_content = render_to_string(
             "emails/activation.html",
             {
@@ -64,7 +64,6 @@ class RegistrationView(APIView):
             subject="Activate your Videoflix account",
             html_message=html_content,
             message=plain_text,
-            from_email="noreply.vladkovach@gmail.com",
             recipient_list=[user.email],
             fail_silently=False,
         )
@@ -91,6 +90,7 @@ class LoginView(APIView):
             )
 
         user = authenticate(request, email=email, password=password)
+
         if user:
             refresh = RefreshToken.for_user(user)
 
@@ -269,7 +269,7 @@ class ResetPasswordView(APIView):
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        reset_password_link = f"http://localhost:5500/pages/auth/confirm_password.html?uid={uidb64}&token={token}"
+        reset_password_link = f"http://127.0.0.1:5500/pages/auth/confirm_password.html?uid={uidb64}&token={token}"
         html_content = render_to_string(
             "emails/reset_password.html",
             {

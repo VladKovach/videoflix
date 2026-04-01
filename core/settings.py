@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
-from pickle import TRUE
 
 from dotenv import load_dotenv
 
@@ -34,17 +33,17 @@ SECRET_KEY = os.getenv(
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", default=True)
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="localhost").split(",")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default="127.0.0.1").split(",")
 CSRF_TRUSTED_ORIGINS = os.environ.get(
-    "CSRF_TRUSTED_ORIGINS", default="http://localhost:5500"
+    "CSRF_TRUSTED_ORIGINS", default="http://127.0.0.1:5500"
 ).split(",")
 
 
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", default="http://localhost:5500"
+    "CORS_ALLOWED_ORIGINS", default="http://127.0.0.1:5500"
 ).split(",")
 
 
@@ -195,10 +194,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.AnonRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {
-        "user": "100/day",
-        "anon": "50/day",
-    },
+    # "DEFAULT_THROTTLE_RATES": {
+    #     "user": "100/day",
+    #     "anon": "50/day",
+    # },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 EMAIL_BACKEND = os.environ.get(
@@ -230,6 +229,6 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_HTTPONLY": True,
-    "AUTH_COOKIE_SECURE": True,
+    "AUTH_COOKIE_SECURE": False,
     "AUTH_COOKIE_SAMESITE": "Lax",
 }
