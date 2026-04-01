@@ -194,10 +194,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.AnonRateThrottle",
     ],
-    # "DEFAULT_THROTTLE_RATES": {
-    #     "user": "100/day",
-    #     "anon": "50/day",
-    # },
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/day",
+        "anon": "50/day",
+    },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 EMAIL_BACKEND = os.environ.get(
