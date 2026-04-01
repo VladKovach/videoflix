@@ -44,9 +44,7 @@ class RegistrationView(APIView):
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        activation_link = (
-            f"http://localhost:8000/api/activate/{uidb64}/{token}/"
-        )
+        activation_link = f"http://localhost:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
         html_content = render_to_string(
             "emails/activation.html",
             {
@@ -201,6 +199,7 @@ class ActivateTokenView(APIView):
 
     def get(self, request, uidb64, token):
         """Handle account activation, activate user if link, token are valid and user is not active - activate user and set JWT tokens in cookies."""
+
         try:
             uid_bytes = urlsafe_base64_decode(uidb64)
             uid = int(uid_bytes.decode())
