@@ -57,6 +57,8 @@ Generate a 16-character app password from your Google account security settings:
 - `EMAIL_HOST_USER` (your email address)
 - `EMAIL_HOST_PASSWORD` (your new app password)
 
+⚠️ Tip: if you have a frontend for Videoflix, make sure your `index.html` runs on `5500` port; If not, you can change `5500` port in `.env` to the one on which your `index.html` runs.
+
 ### Step 4: Build and start with Docker Compose
 
 ```bash
