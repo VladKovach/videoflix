@@ -67,7 +67,7 @@ docker compose up --build -d
 
 ⚠️ Tip: If you see the error `service "web" is not running`, open `backend.entrypoint.sh` and make sure your line endings are set to LF instead of CRLF (bottom right in your editor). Save the file and try again.
 
-### Step 6: Access the application
+### Step 5: Access the application
 
 Open `http://127.0.0.1:8000/` in your browser.
 
