@@ -41,7 +41,7 @@ def transcode_video(video_id):
     video.status = "processing"
     video.save(update_fields=["status"])
 
-    base_dir = os.path.join(settings.MEDIA_ROOT, "video", str(video_id))
+    base_dir = os.path.join(settings.MEDIA_ROOT, "videos", str(video_id))
     os.makedirs(base_dir, exist_ok=True)
 
     try:

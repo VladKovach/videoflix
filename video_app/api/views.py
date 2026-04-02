@@ -26,7 +26,7 @@ class VideoPlaylistView(View):
         """Serve the HLS playlist file for the specified movie and resolution."""
         playlist_path = ""
         try:
-            playlist_path = f"{settings.MEDIA_ROOT}/video/{movie_id}/{resolution}/index.m3u8"
+            playlist_path = f"{settings.MEDIA_ROOT}/videos/{movie_id}/{resolution}/index.m3u8"
         except:
             raise Http404("Playlist not found")
         with open(playlist_path, "r", encoding="utf-8") as f:
@@ -44,7 +44,7 @@ class VideoSegmentView(View):
     def get(self, request, movie_id, resolution, segment):
         """Serve the specified HLS video segment file."""
         segment_path = os.path.join(
-            settings.MEDIA_ROOT, "video", str(movie_id), resolution, segment
+            settings.MEDIA_ROOT, "videos", str(movie_id), resolution, segment
         )
         if not os.path.exists(segment_path):
             raise Http404("Segment not found")
