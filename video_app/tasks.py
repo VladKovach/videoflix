@@ -3,7 +3,14 @@ import subprocess
 
 import django_rq
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from rest_framework.test import force_bytes
 
+User = get_user_model()
 QUALITY_PROFILES = [
     {
         "resolution": "360p",
@@ -101,3 +108,69 @@ def transcode_video(video_id):
     except subprocess.CalledProcessError:
         video.status = "failed"
         video.save(update_fields=["status"])
+
+
+@django_rq.job("fast")
+def send_activation_email(user_id):
+    user = User.objects.filter(id=user_id).first()
+
+    uidb64 = urlsafe_base64_encode(force_bytes(user_id))
+    token = default_token_generator.make_token(user)
+
+    activation_link = f"http://127.0.0.1:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
+    html_content = render_to_string(
+        "emails/activation.html",
+        {"activation_link": activation_link, "user_email": user.email},
+    )
+
+    plain_text = f"""
+        Hi {user.email}!
+
+        Click here to activate your Videoflix account:
+        {activation_link}
+
+        Thanks,
+        Videoflix Team
+    """
+
+    send_mail(
+        subject="Activate your Videoflix account",
+        html_message=html_content,
+        message=plain_text,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
+
+
+@django_rq.job("fast")
+def send_reset_password_email(user_id):
+    user = User.objects.filter(id=user_id).first()
+
+    uidb64 = urlsafe_base64_encode(force_bytes(user_id))
+    token = default_token_generator.make_token(user)
+
+    reset_password_link = f"http://127.0.0.1:5500/pages/auth/confirm_password.html?uid={uidb64}&token={token}"
+    html_content = render_to_string(
+        "emails/reset_password.html",
+        {
+            "reset_password_link": reset_password_link,
+            "user_email": user.email,
+        },
+    )
+    plain_text = f"""
+        Hi {user.email}!,
+
+        Click below to reset your password::
+        {reset_password_link}
+
+        Videoflix Team
+        """
+    send_mail(
+        subject="Reset password for your Videoflix account",
+        html_message=html_content,
+        message=plain_text,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )

@@ -1,11 +1,8 @@
 from tokenize import TokenError
 
-from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -18,13 +15,9 @@ from auth_app.api.serializers import (
     RegistrationSerializer,
     ResetPasswordSerializer,
 )
+from video_app.tasks import send_activation_email, send_reset_password_email
 
 User = get_user_model()
-
-
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 
 
 class RegistrationView(APIView):
@@ -42,31 +35,8 @@ class RegistrationView(APIView):
         user.is_active = False
         user.save()
 
-        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        user_email = user.email
-        activation_link = f"http://127.0.0.1:5500/pages/auth/activate.html?uid={uidb64}&token={token}"
-        html_content = render_to_string(
-            "emails/activation.html",
-            {"activation_link": activation_link, "user_email": user_email},
-        )
-        plain_text = f"""
-        Hi {user_email}!,
+        send_activation_email.delay(user.id)
 
-        Click here to activate your Videoflix account:
-        {activation_link}
-
-        Thanks,
-        Videoflix Team
-        """
-        send_mail(
-            subject="Activate your Videoflix account",
-            html_message=html_content,
-            message=plain_text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
         return Response(
             {"message": "Check your email to activate your account"},
             status=201,
@@ -265,35 +235,8 @@ class ResetPasswordView(APIView):
                 {"detail": "An email has been sent to reset your password."},
                 status=200,
             )
+        send_reset_password_email.delay(user.id)
 
-        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-
-        user_email = user.email
-        reset_password_link = f"http://127.0.0.1:5500/pages/auth/confirm_password.html?uid={uidb64}&token={token}"
-        html_content = render_to_string(
-            "emails/reset_password.html",
-            {
-                "reset_password_link": reset_password_link,
-                "user_email": user_email,
-            },
-        )
-        plain_text = f"""
-            Hi {user_email}!,
-
-            Click below to reset your password::
-            {reset_password_link}
-
-            Videoflix Team
-            """
-        send_mail(
-            subject="Reset password for your Videoflix account",
-            html_message=html_content,
-            message=plain_text,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
         return Response(
             {
                 "detail": "If an account with that email exists, you will receive a password reset link shortly."

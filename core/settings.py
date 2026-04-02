@@ -135,6 +135,12 @@ RQ_QUEUES = {
         "DEFAULT_TIMEOUT": 900,
         "REDIS_CLIENT_KWARGS": {},
     },
+    "fast": {
+        "HOST": "redis",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 180,
+    },
 }
 
 # Password validation
