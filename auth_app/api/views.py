@@ -230,7 +230,7 @@ class ActivateTokenView(APIView):
             key="access_token",
             value=str(refresh.access_token),
             httponly=True,
-            secure=False,  # TODO change to True on https
+            secure=False,
             samesite="Lax",
             max_age=30 * 60,
         )
